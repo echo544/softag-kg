@@ -1,0 +1,66 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix sof:  <https://softagkg.org/ontology#> .
+
+# ontology metadata
+
+<https://softagkg.org/ontology>
+    rdf:type        owl:Ontology ;
+    rdfs:label      "SOFTagKG Ontology" ;
+    rdfs:comment    "Schema for SOFTagKG: a knowledge graph of the Stack Overflow tag ecosystem." ;
+    dct:creator     "echo544" ;
+    dct:created     "2026"^^xsd:gYear ;
+    dct:source      <https://data.stackexchange.com/stackoverflow> ;
+    dct:license     <https://creativecommons.org/licenses/by/4.0/> .
+
+# classes
+
+sof:Tag
+    rdf:type        owl:Class ;
+    rdfs:label      "Tag" ;
+    rdfs:comment    "A Stack Overflow tag representing a technology, language, framework, or topic. Tags are applied by question authors to categorise their questions." .
+sof:CoOccurrence
+    rdf:type        owl:Class ;
+    rdfs:label      "CoOccurrence" ;
+    rdfs:comment    "Represents a co-occurrence relationship between two sof:Tag instances. Reifies the edge as a named resource so that the co-occurrence weight can be attached unambiguously to a specific tag pair, avoiding the ambiguity of attaching sof:coWeight directly to a source node under RDF set semantics." .
+
+# datatype properties
+
+sof:questionCount
+    rdf:type        owl:DatatypeProperty ;
+    rdfs:label      "question count" ;
+    rdfs:comment    "The total number of Stack Overflow questions tagged with this tag, as recorded in the Stack Exchange Data Explorer at the time of data collection." ;
+    rdfs:domain     sof:Tag ;
+    rdfs:range      xsd:integer .
+sof:coWeight
+    rdf:type        owl:DatatypeProperty ;
+    rdfs:label      "co-occurrence weight" ;
+    rdfs:comment    "The number of Stack Overflow questions on which both the source tag and the target tag appear together. Only pairs with a co-occurrence count of 500 or more are included in the graph." ;
+    rdfs:domain     sof:CoOccurrence ;
+    rdfs:range      xsd:integer .
+
+# object properties
+
+sof:coOccursWith
+    rdf:type        owl:ObjectProperty ;
+    rdf:type        owl:SymmetricProperty ;
+    rdfs:label      "co-occurs with" ;
+    rdfs:comment    "Connects two sof:Tag instances that appear together on at least 500 Stack Overflow questions. This property is symmetric: if A co-occurs with B, B co-occurs with A. It is present on both directions of each pair to support efficient graph traversal queries. For weighted queries, use sof:CoOccurrence nodes via sof:source and sof:target." ;
+    rdfs:domain     sof:Tag ;
+    rdfs:range      sof:Tag .
+sof:source
+    rdf:type        owl:ObjectProperty ;
+    rdfs:label      "source tag" ;
+    rdfs:comment    "The source (more popular) tag in a co-occurrence pair, as determined by question count at the time of data collection. Note: due to mixing of deduplication strategies across SEDE query batches, directionality is not guaranteed to be uniformly by question count. Use UNION in SPARQL queries to retrieve pairs regardless of direction." ;
+    rdfs:domain     sof:CoOccurrence ;
+    rdfs:range      sof:Tag .
+sof:target
+    rdf:type        owl:ObjectProperty ;
+    rdfs:label      "target tag" ;
+    rdfs:comment    "The target (less popular) tag in a co-occurrence pair, as determined by question count at the time of data collection. See sof:source for directionality caveats." ;
+    rdfs:domain     sof:CoOccurrence ;
+    rdfs:range      sof:Tag .
